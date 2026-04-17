@@ -1,0 +1,392 @@
+/*
+ * navbar.css
+ * Floating glassmorphism navbar with glitch logo, neon active links,
+ * scroll-spy indicator, and mobile hamburger menu.
+ * Depends on tokens.css being loaded first.
+ */
+
+/* ── Keyframes ───────────────────────────────────────────────────────────────── */
+
+/* Glitch effect for the logo */
+@keyframes glitch-clip-1 {
+  0%   { clip-path: inset(40% 0 60% 0); transform: translate(-4px, 0); }
+  20%  { clip-path: inset(10% 0 85% 0); transform: translate( 4px, 0); }
+  40%  { clip-path: inset(70% 0 10% 0); transform: translate(-2px, 0); }
+  60%  { clip-path: inset(25% 0 55% 0); transform: translate( 3px, 0); }
+  80%  { clip-path: inset(55% 0 30% 0); transform: translate(-3px, 0); }
+  100% { clip-path: inset(40% 0 60% 0); transform: translate( 0,   0); }
+}
+
+@keyframes glitch-clip-2 {
+  0%   { clip-path: inset(65% 0 20% 0); transform: translate( 3px, 0); }
+  20%  { clip-path: inset(85% 0  5% 0); transform: translate(-4px, 0); }
+  40%  { clip-path: inset(15% 0 70% 0); transform: translate( 2px, 0); }
+  60%  { clip-path: inset(45% 0 40% 0); transform: translate(-3px, 0); }
+  80%  { clip-path: inset(80% 0 10% 0); transform: translate( 4px, 0); }
+  100% { clip-path: inset(65% 0 20% 0); transform: translate( 0,   0); }
+}
+
+/* Neon underline slide-in */
+@keyframes neon-underline-in {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* Hamburger top/bottom bars morph into × */
+@keyframes bar-top-open {
+  0%   { transform: translateY(0)   rotate(0deg); }
+  50%  { transform: translateY(8px) rotate(0deg); }
+  100% { transform: translateY(8px) rotate(45deg); }
+}
+@keyframes bar-top-close {
+  0%   { transform: translateY(8px) rotate(45deg); }
+  50%  { transform: translateY(8px) rotate(0deg); }
+  100% { transform: translateY(0)   rotate(0deg); }
+}
+@keyframes bar-mid-open  { to   { opacity: 0; transform: scaleX(0); } }
+@keyframes bar-mid-close { from { opacity: 0; transform: scaleX(0); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes bar-bot-open {
+  0%   { transform: translateY(0)    rotate(0deg); }
+  50%  { transform: translateY(-8px) rotate(0deg); }
+  100% { transform: translateY(-8px) rotate(-45deg); }
+}
+@keyframes bar-bot-close {
+  0%   { transform: translateY(-8px) rotate(-45deg); }
+  50%  { transform: translateY(-8px) rotate(0deg); }
+  100% { transform: translateY(0)    rotate(0deg); }
+}
+
+/* Mobile menu slide-down */
+@keyframes menu-open {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Active link neon pulse */
+@keyframes neon-pulse {
+  0%, 100% { text-shadow: 0 0 6px var(--color-neon-cyan), 0 0 14px var(--color-neon-cyan); }
+  50%       { text-shadow: 0 0 10px var(--color-neon-cyan), 0 0 24px var(--color-neon-cyan), 0 0 40px var(--color-neon-cyan-dim); }
+}
+
+/* ── Navbar shell ─────────────────────────────────────────────────────────────── */
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: var(--navbar-height);
+
+  /* Glass base state */
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border-bottom: 1px solid var(--glass-border-light);
+  box-shadow: var(--glass-shadow-light);
+
+  transition:
+    background var(--transition-slow),
+    border-color var(--transition-slow),
+    box-shadow var(--transition-slow);
+
+  /* Prevent content from bleeding under bar in iOS Safari */
+  will-change: background, border-color;
+}
+
+/* Scrolled state — more opaque + brighter neon border */
+.navbar--scrolled {
+  background: var(--glass-bg-scrolled-light);
+  border-bottom-color: var(--glass-border-scrolled);
+  box-shadow:
+    var(--glass-shadow-light),
+    0 0 0 1px var(--glass-border-scrolled),
+    0 0 20px rgba(0, 245, 255, 0.10);
+}
+
+/* ── Inner container ─────────────────────────────────────────────────────────── */
+
+.navbar__inner {
+  max-width: 1200px;
+  height: 100%;
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* ── Logo / Brand ────────────────────────────────────────────────────────────── */
+
+.navbar__logo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-neon-cyan);
+  background: rgba(0, 245, 255, 0.08);
+  color: var(--color-neon-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition: box-shadow var(--transition-fast), background var(--transition-fast);
+  overflow: hidden;         /* clip glitch pseudo-elements */
+  flex-shrink: 0;
+}
+
+.navbar__logo:hover,
+.navbar__logo:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-neon-cyan), 0 0 16px rgba(0, 245, 255, 0.4);
+  background: rgba(0, 245, 255, 0.14);
+}
+
+/* Glitch pseudo-layers — only visible on hover */
+.navbar__logo::before,
+.navbar__logo::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.navbar__logo::before {
+  color: var(--color-neon-pink);
+  animation: none;
+}
+.navbar__logo::after {
+  color: var(--color-neon-purple);
+  animation: none;
+}
+
+.navbar__logo:hover::before {
+  opacity: 0.9;
+  animation: glitch-clip-1 0.55s steps(1) infinite;
+}
+.navbar__logo:hover::after {
+  opacity: 0.9;
+  animation: glitch-clip-2 0.55s steps(1) infinite;
+}
+
+/* ── Navigation links ────────────────────────────────────────────────────────── */
+
+.navbar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.navbar__link {
+  position: relative;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+  outline: none;
+
+  /* Neon underline — hidden by default */
+  --link-underline-color: var(--color-neon-cyan);
+}
+
+.navbar__link::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: var(--space-3);
+  right: var(--space-3);
+  height: 2px;
+  border-radius: var(--radius-full);
+  background: var(--link-underline-color);
+  box-shadow: 0 0 6px var(--link-underline-color), 0 0 12px var(--link-underline-color);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--transition-normal);
+}
+
+/* Hover */
+.navbar__link:hover {
+  color: var(--color-text);
+  background: rgba(0, 245, 255, 0.06);
+}
+
+.navbar__link:hover::after {
+  transform: scaleX(1);
+}
+
+/* Focus visible */
+.navbar__link:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: 2px;
+}
+
+/* Active — set by scroll-spy JS via .is-active class */
+.navbar__link.is-active {
+  color: var(--color-neon-cyan);
+  animation: neon-pulse 2.4s ease-in-out infinite;
+}
+
+.navbar__link.is-active::after {
+  transform: scaleX(1);
+  animation: neon-underline-in var(--transition-normal) ease-out both;
+}
+
+/* ── Hamburger button (mobile only) ─────────────────────────────────────────── */
+
+.navbar__hamburger {
+  display: none;        /* hidden on desktop */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: var(--space-2);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.navbar__hamburger:hover {
+  background: rgba(0, 245, 255, 0.08);
+}
+
+.navbar__hamburger:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: 2px;
+}
+
+.hamburger__bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-text);
+  transform-origin: center center;
+  transition: background var(--transition-fast);
+}
+
+.hamburger__bar + .hamburger__bar {
+  margin-top: 6px;
+}
+
+/* Open state animations */
+.navbar__hamburger[aria-expanded="true"] .hamburger__bar:nth-child(1) {
+  animation: bar-top-open 0.3s ease forwards;
+}
+.navbar__hamburger[aria-expanded="true"] .hamburger__bar:nth-child(2) {
+  animation: bar-mid-open 0.15s ease forwards;
+}
+.navbar__hamburger[aria-expanded="true"] .hamburger__bar:nth-child(3) {
+  animation: bar-bot-open 0.3s ease forwards;
+}
+
+/* Close state animations */
+.navbar__hamburger[aria-expanded="false"] .hamburger__bar:nth-child(1) {
+  animation: bar-top-close 0.3s ease forwards;
+}
+.navbar__hamburger[aria-expanded="false"] .hamburger__bar:nth-child(2) {
+  animation: bar-mid-close 0.3s ease forwards;
+}
+.navbar__hamburger[aria-expanded="false"] .hamburger__bar:nth-child(3) {
+  animation: bar-bot-close 0.3s ease forwards;
+}
+
+/* ── Mobile menu panel ───────────────────────────────────────────────────────── */
+
+.navbar__mobile-menu {
+  display: none;            /* shown only on mobile */
+  position: fixed;
+  top: var(--navbar-height);
+  left: 0;
+  right: 0;
+  z-index: 999;
+
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border-bottom: 1px solid var(--glass-border-light);
+  box-shadow: 0 8px 32px rgba(0, 245, 255, 0.08);
+
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.navbar__mobile-menu.is-open {
+  display: flex;
+  animation: menu-open 0.25s ease-out both;
+}
+
+/* Mobile links — wider hit targets */
+.navbar__mobile-link {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+  border-left: 2px solid transparent;
+}
+
+.navbar__mobile-link:hover {
+  color: var(--color-text);
+  background: rgba(0, 245, 255, 0.06);
+  border-left-color: var(--color-neon-cyan-dim);
+}
+
+.navbar__mobile-link:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: 2px;
+}
+
+.navbar__mobile-link.is-active {
+  color: var(--color-neon-cyan);
+  background: rgba(0, 245, 255, 0.08);
+  border-left-color: var(--color-neon-cyan);
+  text-shadow: 0 0 8px var(--color-neon-cyan);
+}
+
+/* ── Responsive breakpoint ───────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .navbar__nav {
+    display: none;          /* hide desktop links */
+  }
+
+  .navbar__hamburger {
+    display: flex;          /* show hamburger */
+  }
+}
+
+/* ── Scrollbar offset for anchor links ───────────────────────────────────────── */
+/* Sections that are jump-targets need top padding so they aren't hidden by navbar */
+[data-section] {
+  scroll-margin-top: calc(var(--navbar-height) + var(--space-4));
+}

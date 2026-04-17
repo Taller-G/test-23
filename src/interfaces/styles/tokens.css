@@ -192,4 +192,51 @@
   --z-overlay: 300;
   --z-modal: 400;
   --z-toast: 500;
+  /* ── Transitions ─────────────────────────────────────────────────────────── */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+
+  /* ── Layout ──────────────────────────────────────────────────────────────── */
+  --max-width: 720px;
+  --navbar-height: 3.75rem;   /* 60px — fixed top bar */
+  --header-height: 4rem;
+
+  /* ── Neon / Glassmorphism palette ────────────────────────────────────────── */
+  --color-neon-cyan:       #00f5ff;
+  --color-neon-cyan-dim:   #00c8d4;
+  --color-neon-purple:     #bf5af2;
+  --color-neon-pink:       #ff2d78;
+  --color-neon-green:      #39ff14;
+
+  /* Glass surface tokens */
+  --glass-bg-light:        rgba(255, 255, 255, 0.55);
+  --glass-bg-dark:         rgba(15, 23, 42, 0.65);
+  --glass-border-light:    rgba(0, 245, 255, 0.25);
+  --glass-border-dark:     rgba(0, 245, 255, 0.18);
+  --glass-blur:            14px;
+  --glass-shadow-light:    0 4px 24px rgba(0, 245, 255, 0.08);
+  --glass-shadow-dark:     0 4px 24px rgba(0, 245, 255, 0.12);
+
+  /* Scrolled-state intensifiers */
+  --glass-bg-scrolled-light:   rgba(255, 255, 255, 0.72);
+  --glass-bg-scrolled-dark:    rgba(15, 23, 42, 0.85);
+  --glass-border-scrolled:     rgba(0, 245, 255, 0.45);
+}
+
+/* Dark-mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg:         #0f172a;
+    --color-surface:    #1e293b;
+    --color-border:     #334155;
+    --color-text:       #f1f5f9;
+    --color-text-muted: #94a3b8;
+
+    /* Glass dark-mode active values */
+    --glass-bg-light:   var(--glass-bg-dark);
+    --glass-border-light: var(--glass-border-dark);
+    --glass-shadow-light: var(--glass-shadow-dark);
+    --glass-bg-scrolled-light: var(--glass-bg-scrolled-dark);
+  }
 }

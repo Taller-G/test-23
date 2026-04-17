@@ -13,6 +13,8 @@
  * Imports: application DTOs (via controller results) only.
  */
 
+import { mountNavbar } from './navbar.js';
+
 /**
  * @param {import('../controllers/ItemController.js').ItemController} controller
  */
@@ -50,6 +52,9 @@ export function renderApp(controller) {
  * @param {import('../controllers/ItemController.js').ItemController} controller
  */
 function _bindInteractions(controller) {
+  // Mount the floating glassmorphism navbar after the shell is in the DOM
+  mountNavbar();
+
   const form = document.getElementById('item-form');
   const nameInput = document.getElementById('item-name');
   const descInput = document.getElementById('item-desc');
@@ -237,6 +242,53 @@ function buildShell() {
       <section id="section-items" aria-labelledby="section-items-heading">
         <h2 id="section-items-heading" class="sr-only">Items</h2>
         ${buildItemsCard()}
+    <main class="main">
+      <section
+        id="section-add"
+        data-section="section-add"
+        class="card"
+        aria-label="Add new item"
+      >
+        <h2 class="card__title">Add Item</h2>
+        <form id="item-form" class="form" novalidate>
+          <div class="form__group">
+            <label class="form__label" for="item-name">Name <span aria-hidden="true">*</span></label>
+            <input
+              class="form__input"
+              id="item-name"
+              type="text"
+              placeholder="Enter item name…"
+              maxlength="120"
+              required
+              autocomplete="off"
+            />
+          </div>
+          <div class="form__group">
+            <label class="form__label" for="item-desc">Description</label>
+            <input
+              class="form__input"
+              id="item-desc"
+              type="text"
+              placeholder="Optional description…"
+              maxlength="500"
+              autocomplete="off"
+            />
+          </div>
+          <button class="btn btn--primary" type="submit">＋ Add Item</button>
+        </form>
+        <div id="feedback" class="feedback" role="alert" aria-live="polite"></div>
+      </section>
+
+      <section
+        id="section-list"
+        data-section="section-list"
+        class="card"
+        aria-label="Item list"
+      >
+        <h2 class="card__title">Items</h2>
+        <ul id="item-list" class="item-list" aria-label="Items">
+          <li class="empty-state">Loading…</li>
+        </ul>
       </section>
     </main>
 
