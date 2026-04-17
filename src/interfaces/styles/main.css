@@ -2,6 +2,9 @@
  * main.css
  * Global layout and base element styles.
  * Depends on tokens.css being loaded first.
+ *
+ * Dark neon theme is applied globally (no media-query gate) via the
+ * semantic colour aliases defined in tokens.css.
  */
 
 /* ── Base ────────────────────────────────────────────────────────────────────── */
@@ -17,19 +20,87 @@ body {
   padding-top: var(--navbar-height);
 }
 
+/* Heading elements use the display (Orbitron) font */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* ── App shell ───────────────────────────────────────────────────────────────── */
+
 #app {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* ── Navigation ──────────────────────────────────────────────────────────────── */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  height: var(--nav-height);
+  background-color: var(--color-bg-raised);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+}
+
+.nav__inner {
+  width: 100%;
+  max-width: var(--max-width-lg);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.nav__brand {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-neon-cyan);
+  text-shadow: var(--glow-cyan);
+  text-transform: uppercase;
+}
+
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.nav__link {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  transition: color var(--transition-fast);
+}
+
+.nav__link:hover,
+.nav__link[aria-current='page'] {
+  color: var(--color-neon-cyan);
+}
+
 /* ── Header ──────────────────────────────────────────────────────────────────── */
 
 .header {
-  background-color: var(--color-brand-600);
-  color: #fff;
-  padding: var(--space-6) var(--space-4);
-  box-shadow: var(--shadow-md);
+  background-color: var(--color-bg-raised);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
 }
 
 .header__inner {
@@ -38,16 +109,22 @@ body {
 }
 
 .header__title {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-weight-bold);
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: var(--font-weight-black);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-neon-cyan);
+  text-shadow: var(--glow-cyan);
   line-height: var(--leading-tight);
-  letter-spacing: -0.02em;
 }
 
 .header__subtitle {
-  margin-top: var(--space-1);
+  margin-top: var(--space-3);
   font-size: var(--text-sm);
-  opacity: 0.85;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 /* ── Main content ────────────────────────────────────────────────────────────── */
@@ -57,24 +134,66 @@ body {
   max-width: var(--max-width);
   width: 100%;
   margin-inline: auto;
-  padding: var(--space-8) var(--space-4);
+  padding: var(--space-8) var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-8);
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────────── */
 
 .footer {
-  text-align: center;
-  padding: var(--space-6) var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  background-color: var(--color-bg-raised);
   border-top: 1px solid var(--color-border);
+  padding: var(--space-8) var(--space-6);
 }
 
-/* ── Utility classes ──────────────────────────────────────────────────────────── */
+.footer__inner {
+  max-width: var(--max-width-lg);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
 
+.footer__copy {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+}
+
+.footer__accent {
+  color: var(--color-neon-cyan);
+}
+
+/* ── Section headings ────────────────────────────────────────────────────────── */
+
+.section__title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-neon-cyan);
+  text-shadow: var(--glow-cyan);
+  text-transform: uppercase;
+  margin-bottom: var(--space-6);
+}
+
+.section__title--magenta {
+  color: var(--color-neon-magenta);
+  text-shadow: var(--glow-magenta);
+}
+
+.section__title--green {
+  color: var(--color-neon-green);
+  text-shadow: var(--glow-green);
+}
+
+/* ── Utility classes ─────────────────────────────────────────────────────────── */
+
+/* Screen-reader only */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -87,9 +206,44 @@ body {
   border-width: 0;
 }
 
-/* Focus-visible outline for keyboard accessibility */
+/* Focus-visible outline — neon cyan ring */
 :focus-visible {
-  outline: 2px solid var(--color-brand-500);
+  outline: 2px solid var(--color-neon-cyan);
   outline-offset: 3px;
   border-radius: var(--radius-sm);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .header__title {
+    font-size: var(--text-3xl);
+  }
+
+  .main {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .nav__links {
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .header__title {
+    font-size: var(--text-2xl);
+    letter-spacing: var(--tracking-wider);
+  }
+
+  .header {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .nav__inner {
+    padding-inline: var(--space-4);
+  }
+
+  .footer {
+    padding: var(--space-6) var(--space-4);
+  }
 }
