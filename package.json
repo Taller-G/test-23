@@ -1,0 +1,40 @@
+{
+  "name": "dasdasdsa",
+  "version": "1.0.0",
+  "description": "A production-ready HTML/CSS/JavaScript application built with Clean Architecture principles.",
+  "main": "src/interfaces/server.js",
+  "scripts": {
+    "start": "node src/interfaces/server.js",
+    "dev": "npx live-server --port=3000 --open=/ .",
+    "lint": "npx eslint src/**/*.js",
+    "format": "npx prettier --write \"src/**/*.js\" \"src/**/*.css\" \"src/**/*.html\"",
+    "test": "npx jest --coverage",
+    "serve": "npx http-server . -p 3000 -o"
+  },
+  "keywords": [
+    "clean-architecture",
+    "javascript",
+    "html",
+    "css"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.5",
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.js",
+      "**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/interfaces/server.js"
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="dasdasdsa — a clean-architecture item manager built with vanilla HTML, CSS and JavaScript." />
+    <title>dasdasdsa</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="src/interfaces/styles/reset.css" />
+    <link rel="stylesheet" href="src/interfaces/styles/tokens.css" />
+    <link rel="stylesheet" href="src/interfaces/styles/main.css" />
+    <link rel="stylesheet" href="src/interfaces/styles/components.css" />
+
+    <!-- Favicon placeholder -->
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <!-- Mount point — renderApp() populates this element -->
+    <div id="app" role="main">
+      <noscript>
+        <p style="text-align:center;padding:2rem;">
+          This application requires JavaScript to be enabled.
+        </p>
+      </noscript>
+    </div>
+
+    <!-- Application entry — ES modules, no bundler needed -->
+    <script type="module" src="src/interfaces/app.js"></script>
+  </body>
+</html>
