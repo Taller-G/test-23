@@ -1,31 +1,129 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="dasdasdsa — a clean-architecture item manager built with vanilla HTML, CSS and JavaScript." />
+    <meta
+      name="description"
+      content="dasdasdsa — a clean-architecture item manager built with vanilla HTML, CSS and JavaScript."
+    />
+    <meta name="theme-color" content="#090909" />
+
     <title>dasdasdsa</title>
 
-    <!-- Styles -->
+    <!--
+      Google Fonts
+      Orbitron  — geometric display font for headings / titles
+      Inter     — humanist sans-serif for body text
+      Preconnect hints reduce connection latency before the stylesheet request.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@400;500;600;700&display=swap"
+    />
+
+    <!-- Styles — order matters: reset → tokens → layout → components -->
     <link rel="stylesheet" href="src/interfaces/styles/reset.css" />
     <link rel="stylesheet" href="src/interfaces/styles/tokens.css" />
     <link rel="stylesheet" href="src/interfaces/styles/main.css" />
     <link rel="stylesheet" href="src/interfaces/styles/components.css" />
 
-    <!-- Favicon placeholder -->
+    <!-- Favicon placeholder (avoids 404 in dev) -->
     <link rel="icon" href="data:," />
   </head>
-  <body>
-    <!-- Mount point — renderApp() populates this element -->
-    <div id="app" role="main">
-      <noscript>
-        <p style="text-align:center;padding:2rem;">
-          This application requires JavaScript to be enabled.
-        </p>
-      </noscript>
-    </div>
 
-    <!-- Application entry — ES modules, no bundler needed -->
+  <body>
+    <!--
+      #app — composition root.
+      renderApp() replaces the inner HTML of this element at runtime.
+      The semantic shell below (nav → main → footer) is the static scaffold;
+      dynamic section content is injected by renderApp() into #section-items
+      and #section-form.
+    -->
+    <div id="app">
+      <!-- ── Navigation ──────────────────────────────────────────────────────── -->
+      <nav class="nav" id="nav" aria-label="Main navigation">
+        <div class="nav__inner">
+          <a class="nav__brand" href="#hero" aria-label="dasdasdsa home"> dasdasdsa </a>
+          <ul class="nav__links" role="list">
+            <li>
+              <a class="nav__link" href="#section-form" aria-label="Go to Add Item section">
+                Add Item
+              </a>
+            </li>
+            <li>
+              <a class="nav__link" href="#section-items" aria-label="Go to Items list section">
+                Items
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- ── Hero / Page header ──────────────────────────────────────────────── -->
+      <header class="header" id="hero" role="banner">
+        <div class="header__inner">
+          <h1 class="header__title">dasdasdsa</h1>
+          <p class="header__subtitle">A clean-architecture item manager</p>
+        </div>
+      </header>
+
+      <!-- ── Main content ────────────────────────────────────────────────────── -->
+      <main class="main" id="main" aria-label="Application content">
+        <!-- Add item form section -->
+        <section id="section-form" aria-labelledby="section-form-heading">
+          <h2 id="section-form-heading" class="sr-only">Add new item</h2>
+          <!--
+            Content injected by renderApp():
+            .card > form#item-form, input#item-name, input#item-desc,
+            button[type=submit], #feedback
+          -->
+        </section>
+
+        <!-- Item list section -->
+        <section id="section-items" aria-labelledby="section-items-heading">
+          <h2 id="section-items-heading" class="sr-only">Items</h2>
+          <!--
+            Content injected by renderApp():
+            .card > ul#item-list > li.item[data-id]
+          -->
+        </section>
+
+        <!-- No-JS fallback — hidden when JS is active -->
+        <noscript>
+          <section id="section-noscript" aria-label="JavaScript required">
+            <p
+              style="
+                text-align: center;
+                padding: 2rem;
+                color: var(--color-text-muted);
+                font-family: sans-serif;
+              "
+            >
+              This application requires JavaScript to be enabled.
+            </p>
+          </section>
+        </noscript>
+      </main>
+
+      <!-- ── Footer ──────────────────────────────────────────────────────────── -->
+      <footer class="footer" id="footer" role="contentinfo">
+        <div class="footer__inner">
+          <p class="footer__copy">
+            <span class="footer__accent">dasdasdsa</span>
+            &mdash; Built with Clean Architecture &amp; Vanilla JS
+          </p>
+        </div>
+      </footer>
+    </div>
+    <!-- /#app -->
+
+    <!--
+      Application entry point — ES Modules, no bundler required.
+      renderApp() populates #section-form and #section-items at DOMContentLoaded.
+    -->
     <script type="module" src="src/interfaces/app.js"></script>
   </body>
 </html>
