@@ -13,6 +13,8 @@ body {
   line-height: var(--leading-normal);
   color: var(--color-text);
   background-color: var(--color-bg);
+  /* Push content below the fixed navbar */
+  padding-top: var(--navbar-height);
 }
 
 #app {

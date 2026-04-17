@@ -9,6 +9,8 @@
  * Imports: application DTOs (via controller results) only.
  */
 
+import { mountNavbar } from './navbar.js';
+
 /**
  * @param {import('../controllers/ItemController.js').ItemController} controller
  */
@@ -21,6 +23,9 @@ export function renderApp(controller) {
   }
 
   root.innerHTML = buildShell();
+
+  // Mount the floating glassmorphism navbar after the shell is in the DOM
+  mountNavbar();
 
   const form = document.getElementById('item-form');
   const nameInput = document.getElementById('item-name');
@@ -165,7 +170,12 @@ function buildShell() {
     </header>
 
     <main class="main">
-      <section class="card" aria-label="Add new item">
+      <section
+        id="section-add"
+        data-section="section-add"
+        class="card"
+        aria-label="Add new item"
+      >
         <h2 class="card__title">Add Item</h2>
         <form id="item-form" class="form" novalidate>
           <div class="form__group">
@@ -196,7 +206,12 @@ function buildShell() {
         <div id="feedback" class="feedback" role="alert" aria-live="polite"></div>
       </section>
 
-      <section class="card" aria-label="Item list">
+      <section
+        id="section-list"
+        data-section="section-list"
+        class="card"
+        aria-label="Item list"
+      >
         <h2 class="card__title">Items</h2>
         <ul id="item-list" class="item-list" aria-label="Items">
           <li class="empty-state">Loading…</li>
