@@ -13,6 +13,7 @@ import { ItemController } from './controllers/ItemController.js';
 import { renderApp } from './views/renderApp.js';
 import { mountExperience } from './views/experience.js';
 import { mountAtsDashboard } from './views/atsDashboard.js';
+import { mountMap } from './views/map.js';
 
 // ── Composition Root ──────────────────────────────────────────────────────────
 const repository = new LocalStorageItemRepository();
@@ -33,5 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const atsRoot = document.getElementById('ats-root');
   if (atsRoot) {
     mountAtsDashboard(atsRoot);
+  }
+
+  // Mount the Interactive Map section
+  const mapRoot = document.getElementById('map-root');
+  if (mapRoot) {
+    mountMap(mapRoot);
   }
 });

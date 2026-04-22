@@ -32,6 +32,19 @@
     <link rel="stylesheet" href="src/interfaces/styles/navbar.css" />
     <link rel="stylesheet" href="src/interfaces/styles/experience.css" />
     <link rel="stylesheet" href="src/interfaces/styles/ats.css" />
+    <link rel="stylesheet" href="src/interfaces/styles/map.css" />
+
+    <!--
+      Leaflet.js — open-source interactive maps (no API key required).
+      Must be loaded before app.js so window.L is available when mountMap() runs.
+      CSS is loaded first so tile layers render correctly on first paint.
+    -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
 
     <!-- Favicon placeholder (avoids 404 in dev) -->
     <link rel="icon" href="data:," />
@@ -89,6 +102,15 @@
       -->
       <div id="ats-root"></div>
 
+      <!-- ── Interactive Map ────────────────────────────────────────────────── -->
+      <!--
+        #map-root — populated at runtime by mountMap() in app.js.
+        Uses max-width: 100% so the map section can span --max-width-lg.
+        Leaflet tiles require the container to have a non-zero height before
+        the map initialises — this is satisfied by .map__canvas in map.css.
+      -->
+      <div id="map-root"></div>
+
       <!-- ── Main content ────────────────────────────────────────────────────── -->
       <main class="main" id="main" aria-label="Application content">
         <!-- Add item form section -->
@@ -138,6 +160,16 @@
       </footer>
     </div>
     <!-- /#app -->
+
+    <!--
+      Leaflet.js runtime — must load before app.js (type="module" is deferred,
+      so a classic script tag here executes first and makes window.L available).
+    -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN2GqnU="
+      crossorigin=""
+    ></script>
 
     <!--
       Application entry point — ES Modules, no bundler required.

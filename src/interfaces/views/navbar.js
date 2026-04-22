@@ -17,6 +17,7 @@
 const NAV_ITEMS = [
   { label: 'Experience', section: 'section-experience' },
   { label: 'ATS',        section: 'section-ats' },
+  { label: 'Map',        section: 'section-map' },
   { label: 'Add Item',   section: 'section-add' },
   { label: 'Items',      section: 'section-list' },
 ];
