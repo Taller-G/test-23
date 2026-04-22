@@ -11,6 +11,7 @@
 import { LocalStorageItemRepository } from '../infrastructure/repositories/LocalStorageItemRepository.js';
 import { ItemController } from './controllers/ItemController.js';
 import { renderApp } from './views/renderApp.js';
+import { mountAtsAnalyzer } from './views/atsAnalyzer.js';
 
 // ── Composition Root ──────────────────────────────────────────────────────────
 const repository = new LocalStorageItemRepository();
@@ -19,4 +20,10 @@ const controller = new ItemController(repository);
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderApp(controller);
+
+  // Mount ATS Analyzer into its dedicated section
+  const atsSection = document.getElementById('section-ats');
+  if (atsSection) {
+    mountAtsAnalyzer(atsSection);
+  }
 });

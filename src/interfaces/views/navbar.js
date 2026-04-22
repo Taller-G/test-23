@@ -15,8 +15,9 @@
 
 /** Navigation items: label + section id (must match data-section attrs in shell) */
 const NAV_ITEMS = [
-  { label: 'Add Item', section: 'section-add' },
-  { label: 'Items',    section: 'section-list' },
+  { label: 'Add Item',      section: 'section-add' },
+  { label: 'Items',         section: 'section-list' },
+  { label: 'ATS Analyzer',  section: 'section-ats' },
 ];
 
 /** Initials shown inside the logo box */
