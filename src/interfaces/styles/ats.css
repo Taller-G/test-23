@@ -458,13 +458,22 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   8. Copy-report action row
+   8. Export actions row (copy + download)
    ───────────────────────────────────────────────────────────────────────────── */
 
 .ats-results__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: var(--space-3);
   padding-bottom: var(--space-4);
+}
+
+/* Success state for the copy button — neon green confirmation */
+.btn--copy-success {
+  color: var(--color-neon-green);
+  border-color: var(--color-neon-green);
+  box-shadow: var(--glow-green);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

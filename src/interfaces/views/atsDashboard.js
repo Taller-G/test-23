@@ -7,7 +7,10 @@
  *  • Slide-up entrance animation when results appear.
  *  • Keyword badges — green for found, red for missing.
  *  • At least 3 generic CV improvement suggestions.
- *  • "Copy report" button that writes a plain-text summary to the clipboard.
+ *  • "Copy report" button — writes plain-text summary to the clipboard with
+ *    a 2-second ✓ check icon confirmation, then restores the original label.
+ *  • "Download .txt" button — generates a .txt file via Blob + URL.createObjectURL
+ *    and triggers a browser download without any external libraries.
  *
  * Layer: Interfaces → Views
  * Imports: nothing from application or domain — receives DTOs via the controller.
@@ -135,6 +138,14 @@ function _renderResults(panel, dto) {
       _copyReportToClipboard(copyBtn, score, tier, foundKeywords, missingKeywords);
     });
   }
+
+  // Wire "Download .txt" button
+  const downloadBtn = panel.querySelector('#ats-download-btn');
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      _downloadReportAsTxt(score, tier, foundKeywords, missingKeywords);
+    });
+  }
 }
 
 // ── Private: gauge animation ─────────────────────────────────────────────────
@@ -183,26 +194,33 @@ function _animateGauge(panel, score) {
   requestAnimationFrame(step);
 }
 
-// ── Private: clipboard ────────────────────────────────────────────────────────
+// ── Private: report text builder ─────────────────────────────────────────────
 
 /**
- * Builds a plain-text report and copies it to the clipboard.
- * Briefly changes the button label to confirm success or failure.
+ * Builds the full plain-text ATS report string shared by both export actions.
+ * Includes the current date, score, tier, found/missing keywords, and
+ * improvement suggestions.
  *
- * @param {HTMLElement} btn
- * @param {number}      score
- * @param {string}      tier
- * @param {string[]}    foundKeywords
- * @param {string[]}    missingKeywords
+ * @param {number}   score
+ * @param {string}   tier            — "low" | "medium" | "high"
+ * @param {string[]} foundKeywords
+ * @param {string[]} missingKeywords
+ * @returns {string}
  */
-function _copyReportToClipboard(btn, score, tier, foundKeywords, missingKeywords) {
+export function _buildReportText(score, tier, foundKeywords, missingKeywords) {
   const tierLabel = { low: 'Low', medium: 'Medium', high: 'High' }[tier] ?? tier;
+  const date = new Date().toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   const lines = [
     '══════════════════════════════════════',
     '  ATS ANALYSIS REPORT',
     '══════════════════════════════════════',
     '',
+    `  Date  : ${date}`,
     `  Score : ${score}/100  (${tierLabel})`,
     '',
     '──────────────────────────────────────',
@@ -227,26 +245,89 @@ function _copyReportToClipboard(btn, score, tier, foundKeywords, missingKeywords
     '══════════════════════════════════════',
   ];
 
-  const text = lines.join('\n');
+  return lines.join('\n');
+}
+
+// ── Private: clipboard ────────────────────────────────────────────────────────
+
+/**
+ * Copies the plain-text ATS report to the system clipboard.
+ * Swaps the button content to a ✓ check icon for 2 seconds as visual
+ * confirmation, then restores the original label.
+ *
+ * @param {HTMLElement} btn
+ * @param {number}      score
+ * @param {string}      tier
+ * @param {string[]}    foundKeywords
+ * @param {string[]}    missingKeywords
+ */
+function _copyReportToClipboard(btn, score, tier, foundKeywords, missingKeywords) {
+  const text = _buildReportText(score, tier, foundKeywords, missingKeywords);
+  const originalHTML = btn.innerHTML;
+  const originalAriaLabel = btn.getAttribute('aria-label');
 
   navigator.clipboard
     .writeText(text)
     .then(() => {
-      const original = btn.textContent;
-      btn.textContent = '✓ Copied!';
+      btn.innerHTML = '✓ Copied!';
+      btn.setAttribute('aria-label', 'Report copied to clipboard');
       btn.disabled = true;
       setTimeout(() => {
-        btn.textContent = original;
+        btn.innerHTML = originalHTML;
+        btn.setAttribute('aria-label', originalAriaLabel);
         btn.disabled = false;
       }, 2000);
     })
     .catch(() => {
-      const original = btn.textContent;
-      btn.textContent = '✗ Failed';
+      const errorHTML = btn.innerHTML;
+      btn.innerHTML = '✗ Failed';
       setTimeout(() => {
-        btn.textContent = original;
+        btn.innerHTML = errorHTML;
       }, 2000);
     });
+}
+
+// ── Private: file download ────────────────────────────────────────────────────
+
+/**
+ * Generates the ATS report as a .txt file and triggers a browser download
+ * using the Blob API and URL.createObjectURL — no external libraries required.
+ * Compatible with Chrome, Firefox and Safari.
+ *
+ * @param {number}   score
+ * @param {string}   tier
+ * @param {string[]} foundKeywords
+ * @param {string[]} missingKeywords
+ */
+export function _downloadReportAsTxt(score, tier, foundKeywords, missingKeywords) {
+  const text = _buildReportText(score, tier, foundKeywords, missingKeywords);
+
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `ats-report-${_formatDateForFilename()}.txt`;
+
+  // Append, click, and clean up — required for Firefox compatibility
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+
+  // Release the object URL to free memory
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Returns the current date formatted as YYYY-MM-DD for use in file names.
+ * @returns {string}
+ */
+function _formatDateForFilename() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 // ── Private: error helpers ────────────────────────────────────────────────────
@@ -418,7 +499,7 @@ function _buildResultsHTML(score, tier, found, missing) {
         </ol>
       </div>
 
-      <!-- ── Copy report ────────────────────────────────────────────────────── -->
+      <!-- ── Export actions ─────────────────────────────────────────────────── -->
       <div class="ats-results__actions">
         <button
           id="ats-copy-btn"
@@ -427,6 +508,14 @@ function _buildResultsHTML(score, tier, found, missing) {
           aria-label="Copy full ATS report to clipboard"
         >
           📋 Copy Report
+        </button>
+        <button
+          id="ats-download-btn"
+          class="btn btn--secondary"
+          type="button"
+          aria-label="Download ATS report as a .txt file"
+        >
+          ⬇ Download .txt
         </button>
       </div>
 
