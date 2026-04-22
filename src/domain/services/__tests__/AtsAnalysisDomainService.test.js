@@ -10,6 +10,8 @@
  *  • keyword deduplication
  *  • empty inputs / edge cases
  *  • invalid inputs throw DomainException
+ *  • detectedSections is always populated in the result
+ *  • section detection integrates correctly (spot-check)
  */
 
 import { AtsAnalysisDomainService } from '../AtsAnalysisDomainService.js';
@@ -97,7 +99,10 @@ describe('AtsAnalysisDomainService', () => {
   });
 
   test('score is 50 when half the keywords are found', () => {
-    const result = service.analyse('I am a React developer with no cloud experience.', ['React', 'AWS']);
+    const result = service.analyse(
+      'I am a React developer with no cloud experience.',
+      ['React', 'AWS']
+    );
     expect(result.score).toBe(50);
   });
 
@@ -135,6 +140,53 @@ describe('AtsAnalysisDomainService', () => {
     // Only "react" is a valid keyword after filtering
     expect(result.score).toBe(100);
     expect(result.foundKeywords).toHaveLength(1);
+  });
+
+  // ── detectedSections is always present ─────────────────────────────────────
+
+  test('result always has a detectedSections object', () => {
+    const result = service.analyse('Some CV text.', ['React']);
+    expect(typeof result.detectedSections).toBe('object');
+    expect(typeof result.detectedSections.experience).toBe('boolean');
+    expect(typeof result.detectedSections.education).toBe('boolean');
+    expect(typeof result.detectedSections.skills).toBe('boolean');
+    expect(typeof result.detectedSections.contact).toBe('boolean');
+  });
+
+  test('detectedSections is populated even when keyword list is empty', () => {
+    const result = service.analyse('\nSkills\nReact, Python', []);
+    expect(typeof result.detectedSections).toBe('object');
+    expect(result.detectedSections.skills).toBe(true);
+  });
+
+  test('detects sections correctly from CV with headings', () => {
+    const cv = `
+CONTACT
+Email: dev@example.com
+
+EXPERIENCE
+Senior Developer at Acme Corp 2020–2023
+
+EDUCATION
+B.Sc. Computer Science
+
+SKILLS
+React, TypeScript, Node.js
+    `;
+    const result = service.analyse(cv, ['React']);
+    expect(result.detectedSections.experience).toBe(true);
+    expect(result.detectedSections.education).toBe(true);
+    expect(result.detectedSections.skills).toBe(true);
+    expect(result.detectedSections.contact).toBe(true);
+  });
+
+  test('detectedSections are all false for a CV with no headings', () => {
+    const result = service.analyse(
+      'I am a developer with React skills and a degree from MIT.',
+      ['React']
+    );
+    expect(result.detectedSections.experience).toBe(false);
+    expect(result.detectedSections.education).toBe(false);
   });
 
   // ── Invalid inputs ──────────────────────────────────────────────────────────

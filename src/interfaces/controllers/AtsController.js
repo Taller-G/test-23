@@ -1,12 +1,14 @@
 /**
  * AtsController
  *
- * Thin adapter between the ATS dashboard UI and the AnalyzeAtsUseCase.
+ * Thin adapter between the ATS dashboard UI and AnalyzeAtsUseCase.
  * Responsibilities:
- *   • Coerce and validate raw view input (CV text + keywords string).
- *   • Parse the comma-separated keywords field into an array.
- *   • Call AnalyzeAtsUseCase.
+ *   • Coerce and validate raw view inputs (CV text + job description text).
+ *   • Call AnalyzeAtsUseCase with the validated inputs.
  *   • Return a plain result envelope ({ ok, data } | { ok, error }).
+ *
+ * The controller accepts raw job description text (not a pre-parsed keyword list).
+ * Keyword extraction is delegated entirely to the use case / domain layer.
  *
  * Layer: Interfaces → Controllers
  * Imports: application use cases + DTOs only. NO domain / infrastructure.
@@ -42,16 +44,20 @@ export class AtsController {
   // ── Actions ─────────────────────────────────────────────────────────────────
 
   /**
-   * Analyse a CV text against a raw keywords string (comma or newline separated).
+   * Analyse a CV text against a raw job description text.
+   * Keyword extraction (stopword filtering, phrase detection) is performed
+   * automatically inside the use case.
    *
-   * @param {{ cvText: string, keywordsRaw: string }} input
+   * @param {{ cvText: string, jobDescriptionText: string }} input
    * @returns {{ ok: boolean, data?: import('../../application/dtos/AtsAnalysisDTO.js').AtsAnalysisDTO, error?: { message: string, code: string } }}
    */
   analyze(input) {
     const cvText =
       typeof input?.cvText === 'string' ? input.cvText.trim() : '';
-    const keywordsRaw =
-      typeof input?.keywordsRaw === 'string' ? input.keywordsRaw.trim() : '';
+    const jobDescriptionText =
+      typeof input?.jobDescriptionText === 'string'
+        ? input.jobDescriptionText.trim()
+        : '';
 
     if (!cvText) {
       return this.#fail({
@@ -60,21 +66,15 @@ export class AtsController {
       });
     }
 
-    if (!keywordsRaw) {
+    if (!jobDescriptionText) {
       return this.#fail({
-        message: 'At least one keyword is required.',
+        message: 'Job description text is required.',
         code: 'VALIDATION_ERROR',
       });
     }
 
-    // Accept comma-separated, newline-separated, or mixed delimiters
-    const keywords = keywordsRaw
-      .split(/[\n,]+/)
-      .map((k) => k.trim())
-      .filter((k) => k.length > 0);
-
     try {
-      const dto = this.#analyzeAts.execute({ cvText, keywords });
+      const dto = this.#analyzeAts.execute({ cvText, jobDescriptionText });
       return this.#ok(dto);
     } catch (err) {
       return this.#fail(err);

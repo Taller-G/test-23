@@ -6,25 +6,52 @@
  *  • score rounding
  *  • tier classification thresholds
  *  • foundKeywords / missingKeywords normalisation
- *  • toSnapshot immutability
+ *  • detectedSections — defaults, valid values, and invariant violations
+ *  • toSnapshot immutability and shape
  */
 
 import { AtsResult } from '../AtsResult.js';
 import { DomainException } from '../../exceptions/DomainException.js';
 
-describe('AtsResult', () => {
-  // ── Valid construction ──────────────────────────────────────────────────────
+// ── Fixtures ─────────────────────────────────────────────────────────────────
 
+const ALL_SECTIONS_TRUE  = { experience: true,  education: true,  skills: true,  contact: true  };
+const ALL_SECTIONS_FALSE = { experience: false, education: false, skills: false, contact: false };
+
+// ── Valid construction ────────────────────────────────────────────────────────
+
+describe('AtsResult', () => {
   test('creates a valid AtsResult with all fields', () => {
     const result = new AtsResult({
       score: 72,
       foundKeywords: ['React', 'TypeScript'],
       missingKeywords: ['GraphQL'],
+      detectedSections: ALL_SECTIONS_TRUE,
     });
 
     expect(result.score).toBe(72);
     expect(result.foundKeywords).toEqual(['react', 'typescript']);
     expect(result.missingKeywords).toEqual(['graphql']);
+    expect(result.detectedSections).toEqual(ALL_SECTIONS_TRUE);
+  });
+
+  test('defaults detectedSections to all-false when omitted', () => {
+    const result = new AtsResult({
+      score: 50,
+      foundKeywords: [],
+      missingKeywords: [],
+    });
+    expect(result.detectedSections).toEqual(ALL_SECTIONS_FALSE);
+  });
+
+  test('defaults detectedSections to all-false when passed as undefined', () => {
+    const result = new AtsResult({
+      score: 50,
+      foundKeywords: [],
+      missingKeywords: [],
+      detectedSections: undefined,
+    });
+    expect(result.detectedSections).toEqual(ALL_SECTIONS_FALSE);
   });
 
   test('rounds fractional scores to the nearest integer', () => {
@@ -42,7 +69,11 @@ describe('AtsResult', () => {
   });
 
   test('accepts score of 100', () => {
-    const result = new AtsResult({ score: 100, foundKeywords: ['node'], missingKeywords: [] });
+    const result = new AtsResult({
+      score: 100,
+      foundKeywords: ['node'],
+      missingKeywords: [],
+    });
     expect(result.score).toBe(100);
   });
 
@@ -98,19 +129,51 @@ describe('AtsResult', () => {
   });
 
   test('missingKeywords getter returns a copy', () => {
-    const r = new AtsResult({ score: 50, foundKeywords: [], missingKeywords: ['python'] });
+    const r = new AtsResult({
+      score: 50,
+      foundKeywords: [],
+      missingKeywords: ['python'],
+    });
     const copy = r.missingKeywords;
     copy.push('hacked');
     expect(r.missingKeywords).toEqual(['python']);
   });
 
+  // ── detectedSections accessor ───────────────────────────────────────────────
+
+  test('detectedSections getter returns a copy — mutation does not affect the entity', () => {
+    const r = new AtsResult({
+      score: 80,
+      foundKeywords: [],
+      missingKeywords: [],
+      detectedSections: ALL_SECTIONS_TRUE,
+    });
+    const copy = r.detectedSections;
+    copy.experience = false; // mutate the copy
+    expect(r.detectedSections.experience).toBe(true); // entity unchanged
+  });
+
+  test('detectedSections supports partial true / false flags', () => {
+    const r = new AtsResult({
+      score: 60,
+      foundKeywords: [],
+      missingKeywords: [],
+      detectedSections: { experience: true, education: false, skills: true, contact: false },
+    });
+    expect(r.detectedSections.experience).toBe(true);
+    expect(r.detectedSections.education).toBe(false);
+    expect(r.detectedSections.skills).toBe(true);
+    expect(r.detectedSections.contact).toBe(false);
+  });
+
   // ── toSnapshot ──────────────────────────────────────────────────────────────
 
-  test('toSnapshot returns a plain object with all fields', () => {
+  test('toSnapshot returns a plain object with all fields including detectedSections', () => {
     const r = new AtsResult({
       score: 80,
       foundKeywords: ['aws'],
       missingKeywords: ['azure'],
+      detectedSections: ALL_SECTIONS_TRUE,
     });
     const snap = r.toSnapshot();
     expect(snap).toEqual({
@@ -118,7 +181,19 @@ describe('AtsResult', () => {
       tier: 'high',
       foundKeywords: ['aws'],
       missingKeywords: ['azure'],
+      detectedSections: ALL_SECTIONS_TRUE,
     });
+  });
+
+  test('toSnapshot detectedSections is a plain object (not frozen entity ref)', () => {
+    const r = new AtsResult({
+      score: 50,
+      foundKeywords: [],
+      missingKeywords: [],
+      detectedSections: ALL_SECTIONS_FALSE,
+    });
+    const snap = r.toSnapshot();
+    expect(snap.detectedSections).toEqual(ALL_SECTIONS_FALSE);
   });
 
   // ── Invariant violations ────────────────────────────────────────────────────
@@ -156,6 +231,42 @@ describe('AtsResult', () => {
   test('throws DomainException when a keyword is an empty string', () => {
     expect(
       () => new AtsResult({ score: 50, foundKeywords: [''], missingKeywords: [] })
+    ).toThrow(DomainException);
+  });
+
+  test('throws DomainException when detectedSections is not a plain object', () => {
+    expect(
+      () =>
+        new AtsResult({
+          score: 50,
+          foundKeywords: [],
+          missingKeywords: [],
+          detectedSections: 'invalid',
+        })
+    ).toThrow(DomainException);
+  });
+
+  test('throws DomainException when detectedSections is an array', () => {
+    expect(
+      () =>
+        new AtsResult({
+          score: 50,
+          foundKeywords: [],
+          missingKeywords: [],
+          detectedSections: [true, false, true, false],
+        })
+    ).toThrow(DomainException);
+  });
+
+  test('throws DomainException when a detectedSections flag is not boolean', () => {
+    expect(
+      () =>
+        new AtsResult({
+          score: 50,
+          foundKeywords: [],
+          missingKeywords: [],
+          detectedSections: { experience: 1, education: false, skills: false, contact: false },
+        })
     ).toThrow(DomainException);
   });
 });

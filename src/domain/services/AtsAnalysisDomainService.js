@@ -3,22 +3,31 @@
  *
  * Pure domain logic for ATS keyword analysis.
  * Determines which keywords from a job description appear in a CV text,
- * computes the match score, and produces an AtsResult entity.
+ * computes the match score, detects CV sections, and produces an AtsResult entity.
  *
  * Rules (business logic lives here, not in use cases):
  *  • Matching is case-insensitive and whole-word aware.
  *  • Score = (foundKeywords.length / totalKeywords.length) * 100.
  *  • Duplicate keywords in the input list are deduplicated before analysis.
  *  • If the keyword list is empty the score is 0.
+ *  • CV section detection is always performed and embedded in the result.
  *
  * Layer: Domain → Services
- * Imports: domain only (AtsResult, DomainException)
+ * Imports: domain only (AtsResult, CvSectionDetectorDomainService, DomainException)
  */
 
 import { AtsResult } from '../entities/AtsResult.js';
+import { CvSectionDetectorDomainService } from './CvSectionDetectorDomainService.js';
 import { DomainException } from '../exceptions/DomainException.js';
 
 export class AtsAnalysisDomainService {
+  /** @type {CvSectionDetectorDomainService} */
+  #sectionDetector;
+
+  constructor() {
+    this.#sectionDetector = new CvSectionDetectorDomainService();
+  }
+
   /**
    * Analyse the CV text against a list of job-description keywords and return
    * an AtsResult entity representing the match.
@@ -36,13 +45,21 @@ export class AtsAnalysisDomainService {
       throw new DomainException('Keywords must be an array.');
     }
 
+    // Detect CV sections (always, independent of keyword list)
+    const detectedSections = this.#sectionDetector.detect(cvText);
+
     // Deduplicate and normalise keywords
     const unique = [
       ...new Set(keywords.map((k) => k.trim().toLowerCase()).filter((k) => k.length > 0)),
     ];
 
     if (unique.length === 0) {
-      return new AtsResult({ score: 0, foundKeywords: [], missingKeywords: [] });
+      return new AtsResult({
+        score: 0,
+        foundKeywords: [],
+        missingKeywords: [],
+        detectedSections,
+      });
     }
 
     const normalised = cvText.toLowerCase();
@@ -60,7 +77,7 @@ export class AtsAnalysisDomainService {
 
     const score = (found.length / unique.length) * 100;
 
-    return new AtsResult({ score, foundKeywords: found, missingKeywords: missing });
+    return new AtsResult({ score, foundKeywords: found, missingKeywords: missing, detectedSections });
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
