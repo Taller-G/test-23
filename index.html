@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="src/interfaces/styles/components.css" />
     <link rel="stylesheet" href="src/interfaces/styles/navbar.css" />
     <link rel="stylesheet" href="src/interfaces/styles/experience.css" />
+    <link rel="stylesheet" href="src/interfaces/styles/ats.css" />
 
     <!-- Favicon placeholder (avoids 404 in dev) -->
     <link rel="icon" href="data:," />
@@ -79,6 +80,14 @@
         the narrow .main column and use the full --max-width-lg.
       -->
       <div id="experience-root"></div>
+
+      <!-- ── ATS Analyser dashboard ─────────────────────────────────────────── -->
+      <!--
+        #ats-root — populated at runtime by mountAtsDashboard() in app.js.
+        Uses max-width: 100% so the full-width section layout is not constrained
+        by the narrow .main column. Section itself applies --max-width-lg internally.
+      -->
+      <div id="ats-root"></div>
 
       <!-- ── Main content ────────────────────────────────────────────────────── -->
       <main class="main" id="main" aria-label="Application content">

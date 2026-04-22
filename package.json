@@ -8,7 +8,7 @@
     "dev": "npx live-server --port=3000 --open=/ .",
     "lint": "npx eslint src/**/*.js",
     "format": "npx prettier --write \"src/**/*.js\" \"src/**/*.css\" \"src/**/*.html\"",
-    "test": "npx jest --coverage",
+    "test": "npx --node-options=--experimental-vm-modules jest --coverage",
     "serve": "npx http-server . -p 3000 -o"
   },
   "keywords": [
@@ -28,6 +28,7 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "transform": {},
     "testMatch": [
       "**/__tests__/**/*.js",
       "**/*.test.js"
@@ -36,5 +37,6 @@
       "src/**/*.js",
       "!src/interfaces/server.js"
     ]
-  }
+  },
+  "type": "module"
 }

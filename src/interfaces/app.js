@@ -12,6 +12,7 @@ import { LocalStorageItemRepository } from '../infrastructure/repositories/Local
 import { ItemController } from './controllers/ItemController.js';
 import { renderApp } from './views/renderApp.js';
 import { mountExperience } from './views/experience.js';
+import { mountAtsDashboard } from './views/atsDashboard.js';
 
 // ── Composition Root ──────────────────────────────────────────────────────────
 const repository = new LocalStorageItemRepository();
@@ -26,5 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const experienceRoot = document.getElementById('experience-root');
   if (experienceRoot) {
     mountExperience(experienceRoot);
+  }
+
+  // Mount the ATS Analyser dashboard
+  const atsRoot = document.getElementById('ats-root');
+  if (atsRoot) {
+    mountAtsDashboard(atsRoot);
   }
 });

@@ -1,0 +1,505 @@
+/*
+ * ats.css
+ * Styles for the ATS Analyser dashboard.
+ *
+ * Sections:
+ *  1. Section wrapper & header
+ *  2. Input form card (textarea overrides)
+ *  3. Results panel — slide-up entrance animation
+ *  4. SVG donut gauge (track + arc + glow layers)
+ *  5. Score label & tier text (dynamic colour per tier)
+ *  6. Keyword badge groups (found = green, missing = red)
+ *  7. Generic improvement suggestions list
+ *  8. Copy-report action row
+ *  9. Responsive overrides
+ *
+ * All colours come from semantic tokens defined in tokens.css.
+ * Tier colours (low / medium / high) are applied via BEM modifiers:
+ *   --low    →  var(--color-danger)       #ff3b5c
+ *   --medium →  var(--color-warning)      #ffb800
+ *   --high   →  var(--color-neon-green)   #39ff14
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   1. Section wrapper & header
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ats {
+  width: 100%;
+  max-width: var(--max-width-lg);
+  margin-inline: auto;
+  padding: var(--space-16) var(--space-6);
+}
+
+.ats__header {
+  text-align: center;
+  margin-bottom: var(--space-10);
+}
+
+.ats__title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-neon-cyan);
+  text-shadow: var(--glow-cyan);
+  line-height: var(--leading-tight);
+}
+
+.ats__subtitle {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   2. Input form card
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ats__form-card {
+  max-width: 760px;
+  margin-inline: auto;
+  margin-bottom: var(--space-10);
+}
+
+.ats__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Textarea base — extends .form__input */
+.ats__textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: var(--leading-relaxed);
+  font-family: var(--font-sans);
+}
+
+.ats__textarea--sm {
+  min-height: 60px;
+}
+
+.ats__field-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+  margin-top: var(--space-1);
+}
+
+.ats__form-error {
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+  background-color: var(--color-danger-subtle);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  letter-spacing: var(--tracking-wide);
+}
+
+.ats__submit-btn {
+  align-self: flex-start;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   3. Results panel — slide-up entrance animation
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ats-results {
+  max-width: 760px;
+  margin-inline: auto;
+
+  /* Hidden by default — JS adds .ats-results--visible after analysis */
+  opacity: 0;
+  transform: translateY(32px);
+  pointer-events: none;
+
+  transition:
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ats-results:empty {
+  display: none;
+}
+
+.ats-results--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.ats-results__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   4. SVG donut gauge
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ats-results__gauge-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  position: relative;
+}
+
+.ats-gauge {
+  display: block;
+  overflow: visible; /* allow glow to bleed outside viewBox */
+}
+
+/* Background track ring — always visible, subtle grey */
+.ats-gauge__track {
+  stroke: var(--color-neutral-700);
+}
+
+/* ── Arc stroke colour per tier ──────────────────────────────────────────── */
+
+.ats-gauge__arc {
+  transition: stroke-dashoffset 0.05s linear; /* controlled by JS rAF loop */
+}
+
+.ats-gauge__arc--low {
+  stroke: var(--color-danger);
+}
+
+.ats-gauge__arc--medium {
+  stroke: var(--color-warning);
+}
+
+.ats-gauge__arc--high {
+  stroke: var(--color-neon-green);
+}
+
+/* ── Glow duplicate (offset + blur via CSS filter) ────────────────────────── */
+
+.ats-gauge__glow {
+  filter: blur(6px);
+  opacity: 0.5;
+  /* stroke-dashoffset is kept in sync by _animateGauge via the shared ID */
+}
+
+/* JavaScript drives the glow arc to mirror the main arc's dashoffset.
+   Because the glow element is a sibling to the arc, we sync it by setting
+   its dashoffset in CSS to use the same value driven onto the parent container
+   via a CSS custom property, rather than a second JS loop. */
+.ats-gauge__glow--low {
+  stroke: var(--color-danger);
+}
+
+.ats-gauge__glow--medium {
+  stroke: var(--color-warning);
+}
+
+.ats-gauge__glow--high {
+  stroke: var(--color-neon-green);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   5. Score label & tier text
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ats-results__score-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.ats-results__score-value {
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-weight: var(--font-weight-black);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+}
+
+.ats-results__score-value--low {
+  color: var(--color-danger);
+  text-shadow: 0 0 12px var(--color-danger-glow), 0 0 28px var(--color-danger-glow);
+}
+
+.ats-results__score-value--medium {
+  color: var(--color-warning);
+  text-shadow: 0 0 12px var(--color-warning-glow), 0 0 28px var(--color-warning-glow);
+}
+
+.ats-results__score-value--high {
+  color: var(--color-neon-green);
+  text-shadow: 0 0 12px var(--color-neon-green-glow), 0 0 28px var(--color-neon-green-glow);
+}
+
+.ats-results__score-unit {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+}
+
+.ats-results__tier-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-align: center;
+}
+
+.ats-results__tier-label--low {
+  color: var(--color-danger);
+}
+
+.ats-results__tier-label--medium {
+  color: var(--color-warning);
+}
+
+.ats-results__tier-label--high {
+  color: var(--color-neon-green);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   6. Keyword badge groups
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ats-results__keywords {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+.ats-results__kw-group {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ats-results__kw-heading {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ats-results__kw-heading--found {
+  color: var(--color-neon-green);
+}
+
+.ats-results__kw-heading--missing {
+  color: var(--color-danger);
+}
+
+.ats-results__kw-icon {
+  font-size: var(--text-base);
+  font-style: normal;
+}
+
+.ats-results__kw-count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-normal);
+}
+
+.ats-results__kw-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ats-results__kw-empty {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+}
+
+.ats-results__kw-tip {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+  line-height: var(--leading-relaxed);
+  border-left: 2px solid var(--color-danger);
+  padding-left: var(--space-3);
+}
+
+/* ── Keyword badge variants ───────────────────────────────────────────────── */
+
+.badge--kw-found {
+  background-color: var(--color-neon-green-subtle);
+  color: var(--color-neon-green);
+  border-color: var(--color-neon-green-dim);
+  padding: var(--space-1) var(--space-3);
+  height: auto;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: none;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-neon-green-dim);
+  /* Subtle entrance stagger handled in JS via class addition */
+  animation: ats-badge-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.badge--kw-missing {
+  background-color: var(--color-danger-subtle);
+  color: var(--color-danger);
+  border-color: var(--color-danger-dim);
+  padding: var(--space-1) var(--space-3);
+  height: auto;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: none;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-danger-dim);
+  animation: ats-badge-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Stagger animation delay for each badge via nth-child */
+.ats-results__kw-list li:nth-child(1)  .badge { animation-delay: 0.05s; }
+.ats-results__kw-list li:nth-child(2)  .badge { animation-delay: 0.10s; }
+.ats-results__kw-list li:nth-child(3)  .badge { animation-delay: 0.15s; }
+.ats-results__kw-list li:nth-child(4)  .badge { animation-delay: 0.20s; }
+.ats-results__kw-list li:nth-child(5)  .badge { animation-delay: 0.25s; }
+.ats-results__kw-list li:nth-child(6)  .badge { animation-delay: 0.30s; }
+.ats-results__kw-list li:nth-child(7)  .badge { animation-delay: 0.35s; }
+.ats-results__kw-list li:nth-child(8)  .badge { animation-delay: 0.40s; }
+.ats-results__kw-list li:nth-child(n+9) .badge { animation-delay: 0.45s; }
+
+@keyframes ats-badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   7. Improvement suggestions
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ats-results__suggestions {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.ats-results__suggestions-heading {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-neon-cyan);
+  text-shadow: var(--glow-cyan);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ats-results__suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  list-style: none;
+  counter-reset: suggestions-counter;
+}
+
+.ats-results__suggestion {
+  counter-increment: suggestions-counter;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+}
+
+/* Numbered neon counter bullet */
+.ats-results__suggestion::before {
+  content: counter(suggestions-counter, decimal-leading-zero);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-neon-cyan);
+  background-color: var(--color-neon-cyan-subtle);
+  border: 1px solid rgba(0, 245, 255, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.1em var(--space-2);
+  letter-spacing: var(--tracking-wide);
+  min-width: 2.2rem;
+  text-align: center;
+  margin-top: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   8. Copy-report action row
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ats-results__actions {
+  display: flex;
+  justify-content: center;
+  padding-bottom: var(--space-4);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   9. Responsive overrides
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .ats {
+    padding: var(--space-12) var(--space-4);
+  }
+
+  .ats-results__keywords {
+    grid-template-columns: 1fr;
+  }
+
+  .ats__title {
+    font-size: var(--text-2xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .ats-results__score-value {
+    font-size: var(--text-4xl);
+  }
+
+  .ats-gauge {
+    width: 150px;
+    height: 150px;
+  }
+
+  .ats__form-card {
+    padding: var(--space-4);
+  }
+
+  .ats-results__suggestions {
+    padding: var(--space-4);
+  }
+}
