@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="src/interfaces/styles/main.css" />
     <link rel="stylesheet" href="src/interfaces/styles/components.css" />
     <link rel="stylesheet" href="src/interfaces/styles/navbar.css" />
+    <link rel="stylesheet" href="src/interfaces/styles/ats.css" />
 
     <!-- Favicon placeholder (avoids 404 in dev) -->
     <link rel="icon" href="data:," />
@@ -89,6 +90,19 @@
           <!--
             Content injected by renderApp():
             .card > ul#item-list > li.item[data-id]
+          -->
+        </section>
+
+        <!-- ATS Analyzer section -->
+        <section
+          id="section-ats"
+          data-section="section-ats"
+          aria-labelledby="section-ats-heading"
+        >
+          <h2 id="section-ats-heading" class="sr-only">Analizador ATS</h2>
+          <!--
+            Content injected by mountAtsAnalyzer() in app.js:
+            .ats > .ats__header + form#ats-form(.ats__grid) + #ats-results
           -->
         </section>
 
