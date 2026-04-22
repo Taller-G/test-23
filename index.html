@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="src/interfaces/styles/main.css" />
     <link rel="stylesheet" href="src/interfaces/styles/components.css" />
     <link rel="stylesheet" href="src/interfaces/styles/navbar.css" />
+    <link rel="stylesheet" href="src/interfaces/styles/experience.css" />
 
     <!-- Favicon placeholder (avoids 404 in dev) -->
     <link rel="icon" href="data:," />
@@ -70,6 +71,14 @@
           <p class="header__subtitle">A clean-architecture item manager</p>
         </div>
       </header>
+
+      <!-- ── Experience timeline ────────────────────────────────────────────── -->
+      <!--
+        #section-experience — populated at runtime by mountExperience() in app.js.
+        The container div uses max-width: 100% so the timeline can break out of
+        the narrow .main column and use the full --max-width-lg.
+      -->
+      <div id="experience-root"></div>
 
       <!-- ── Main content ────────────────────────────────────────────────────── -->
       <main class="main" id="main" aria-label="Application content">
