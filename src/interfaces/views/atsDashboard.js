@@ -6,8 +6,14 @@
  *  • Animated SVG donut/gauge chart with dynamic neon colour (red / yellow / green).
  *  • Slide-up entrance animation when results appear.
  *  • Keyword badges — green for found, red for missing.
+ *  • CV section detection panel (experience, education, skills, contact).
  *  • At least 3 generic CV improvement suggestions.
  *  • "Copy report" button that writes a plain-text summary to the clipboard.
+ *
+ * The form accepts:
+ *  • CV / Résumé text (pasted plain text)
+ *  • Job Description text (full text — keywords are extracted automatically
+ *    server-side via KeywordExtractorDomainService, filtering EN/ES stopwords)
  *
  * Layer: Interfaces → Views
  * Imports: nothing from application or domain — receives DTOs via the controller.
@@ -27,6 +33,17 @@ const GENERIC_SUGGESTIONS = [
   'Quantify your achievements wherever possible — numbers, percentages, and timeframes make impact concrete and scannable.',
   'Ensure your CV uses a clean, single-column layout with standard section headings (Experience, Education, Skills) that ATS parsers recognise.',
   'Include both the abbreviated and full forms of key terms (e.g. "AI / Artificial Intelligence") to maximise keyword coverage.',
+];
+
+/**
+ * Metadata for each canonical CV section shown in the detection panel.
+ * @type {Array<{ key: string, label: string, labelEs: string, icon: string }>}
+ */
+const CV_SECTIONS_META = [
+  { key: 'experience',  label: 'Experience',  labelEs: 'Experiencia', icon: '💼' },
+  { key: 'education',   label: 'Education',   labelEs: 'Educación',   icon: '🎓' },
+  { key: 'skills',      label: 'Skills',      labelEs: 'Habilidades', icon: '⚡' },
+  { key: 'contact',     label: 'Contact',     labelEs: 'Contacto',    icon: '📬' },
 ];
 
 // Gauge SVG geometry
@@ -55,13 +72,13 @@ export function mountAtsDashboard(container) {
 
   container.innerHTML = _buildSection();
 
-  const form = container.querySelector('#ats-form');
-  const cvInput = container.querySelector('#ats-cv-text');
-  const keywordsInput = container.querySelector('#ats-keywords');
-  const resultsPanel = container.querySelector('#ats-results');
-  const formError = container.querySelector('#ats-form-error');
+  const form              = container.querySelector('#ats-form');
+  const cvInput           = container.querySelector('#ats-cv-text');
+  const jdInput           = container.querySelector('#ats-jd-text');
+  const resultsPanel      = container.querySelector('#ats-results');
+  const formError         = container.querySelector('#ats-form-error');
 
-  if (!form || !cvInput || !keywordsInput || !resultsPanel || !formError) {
+  if (!form || !cvInput || !jdInput || !resultsPanel || !formError) {
     console.error('mountAtsDashboard: required DOM elements missing after mount.');
     return { destroy: () => {} };
   }
@@ -74,7 +91,7 @@ export function mountAtsDashboard(container) {
 
     const result = controller.analyze({
       cvText: cvInput.value,
-      keywordsRaw: keywordsInput.value,
+      jobDescriptionText: jdInput.value,
     });
 
     if (!result.ok) {
@@ -85,7 +102,7 @@ export function mountAtsDashboard(container) {
     _renderResults(resultsPanel, result.data);
   });
 
-  // ── Reset — clear results when inputs change significantly ──────────────────
+  // ── Reset — hide results when inputs change significantly ───────────────────
 
   const onInputChange = () => {
     if (resultsPanel.classList.contains('ats-results--visible')) {
@@ -94,12 +111,12 @@ export function mountAtsDashboard(container) {
   };
 
   cvInput.addEventListener('input', onInputChange);
-  keywordsInput.addEventListener('input', onInputChange);
+  jdInput.addEventListener('input', onInputChange);
 
   return {
     destroy() {
       cvInput.removeEventListener('input', onInputChange);
-      keywordsInput.removeEventListener('input', onInputChange);
+      jdInput.removeEventListener('input', onInputChange);
     },
   };
 }
@@ -113,10 +130,16 @@ export function mountAtsDashboard(container) {
  * @param {import('../../application/dtos/AtsAnalysisDTO.js').AtsAnalysisDTO} dto
  */
 function _renderResults(panel, dto) {
-  const { score, tier, foundKeywords, missingKeywords } = dto;
+  const { score, tier, foundKeywords, missingKeywords, detectedSections } = dto;
 
   // Inject dynamic HTML
-  panel.innerHTML = _buildResultsHTML(score, tier, foundKeywords, missingKeywords);
+  panel.innerHTML = _buildResultsHTML(
+    score,
+    tier,
+    foundKeywords,
+    missingKeywords,
+    detectedSections
+  );
 
   // Trigger slide-up + run the gauge animation on next frame so CSS transition fires
   requestAnimationFrame(() => {
@@ -132,7 +155,14 @@ function _renderResults(panel, dto) {
   const copyBtn = panel.querySelector('#ats-copy-btn');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
-      _copyReportToClipboard(copyBtn, score, tier, foundKeywords, missingKeywords);
+      _copyReportToClipboard(
+        copyBtn,
+        score,
+        tier,
+        foundKeywords,
+        missingKeywords,
+        detectedSections
+      );
     });
   }
 }
@@ -148,7 +178,7 @@ function _renderResults(panel, dto) {
  * @param {number}      score  — 0-100
  */
 function _animateGauge(panel, score) {
-  const arc = panel.querySelector('#ats-gauge-arc');
+  const arc  = panel.querySelector('#ats-gauge-arc');
   const glow = panel.querySelector('.ats-gauge__glow');
   if (!arc) return;
 
@@ -156,14 +186,14 @@ function _animateGauge(panel, score) {
     GAUGE_CIRCUMFERENCE - (score / 100) * GAUGE_CIRCUMFERENCE;
 
   // Start at the "empty" state
-  arc.style.strokeDashoffset = String(GAUGE_CIRCUMFERENCE);
+  arc.style.strokeDashoffset  = String(GAUGE_CIRCUMFERENCE);
   if (glow) glow.style.strokeDashoffset = String(GAUGE_CIRCUMFERENCE);
 
   const duration = 1200; // ms
-  const start = performance.now();
+  const start    = performance.now();
 
   function step(now) {
-    const elapsed = now - start;
+    const elapsed  = now - start;
     const progress = Math.min(elapsed / duration, 1);
 
     // Ease-out cubic
@@ -194,9 +224,22 @@ function _animateGauge(panel, score) {
  * @param {string}      tier
  * @param {string[]}    foundKeywords
  * @param {string[]}    missingKeywords
+ * @param {{ experience: boolean, education: boolean, skills: boolean, contact: boolean }} detectedSections
  */
-function _copyReportToClipboard(btn, score, tier, foundKeywords, missingKeywords) {
+function _copyReportToClipboard(
+  btn,
+  score,
+  tier,
+  foundKeywords,
+  missingKeywords,
+  detectedSections
+) {
   const tierLabel = { low: 'Low', medium: 'Medium', high: 'High' }[tier] ?? tier;
+
+  const sectionLines = CV_SECTIONS_META.map(({ key, label }) => {
+    const detected = detectedSections?.[key] ?? false;
+    return `  ${detected ? '✓' : '✗'} ${label}`;
+  });
 
   const lines = [
     '══════════════════════════════════════',
@@ -204,6 +247,11 @@ function _copyReportToClipboard(btn, score, tier, foundKeywords, missingKeywords
     '══════════════════════════════════════',
     '',
     `  Score : ${score}/100  (${tierLabel})`,
+    '',
+    '──────────────────────────────────────',
+    '  CV SECTIONS DETECTED',
+    '──────────────────────────────────────',
+    ...sectionLines,
     '',
     '──────────────────────────────────────',
     '  KEYWORDS FOUND',
@@ -283,7 +331,9 @@ function _buildSection() {
     >
       <header class="ats__header">
         <h2 id="ats-heading" class="ats__title">ATS Analyser</h2>
-        <p class="ats__subtitle">Check how well your CV matches a job description</p>
+        <p class="ats__subtitle">
+          Paste your CV and a job description — keywords are extracted automatically
+        </p>
       </header>
 
       <!-- ── Input form ──────────────────────────────────────────────────────── -->
@@ -308,19 +358,19 @@ function _buildSection() {
           </div>
 
           <div class="form__group">
-            <label class="form__label" for="ats-keywords">
-              Job Description Keywords <span aria-hidden="true">*</span>
+            <label class="form__label" for="ats-jd-text">
+              Job Description <span aria-hidden="true">*</span>
             </label>
             <textarea
-              id="ats-keywords"
-              class="form__input ats__textarea ats__textarea--sm"
-              placeholder="e.g. React, TypeScript, REST API, CI/CD, team leadership…"
-              rows="3"
+              id="ats-jd-text"
+              class="form__input ats__textarea"
+              placeholder="Paste the full job description here — keywords will be extracted automatically…"
+              rows="6"
               required
-              aria-describedby="ats-keywords-hint"
+              aria-describedby="ats-jd-hint"
             ></textarea>
-            <span id="ats-keywords-hint" class="ats__field-hint">
-              Enter keywords from the job posting, separated by commas or newlines.
+            <span id="ats-jd-hint" class="ats__field-hint">
+              Paste the complete job posting. Stopwords (EN/ES) are filtered out automatically.
             </span>
           </div>
 
@@ -351,9 +401,10 @@ function _buildSection() {
  * @param {string}   tier         — "low" | "medium" | "high"
  * @param {string[]} found
  * @param {string[]} missing
+ * @param {{ experience: boolean, education: boolean, skills: boolean, contact: boolean }} detectedSections
  * @returns {string}
  */
-function _buildResultsHTML(score, tier, found, missing) {
+function _buildResultsHTML(score, tier, found, missing, detectedSections) {
   return `
     <div class="ats-results__inner">
 
@@ -369,6 +420,9 @@ function _buildResultsHTML(score, tier, found, missing) {
         </p>
       </div>
 
+      <!-- ── CV section detection ──────────────────────────────────────────── -->
+      ${_buildSectionsHTML(detectedSections)}
+
       <!-- ── Keywords ─────────────────────────────────────────────────────── -->
       <div class="ats-results__keywords">
 
@@ -382,7 +436,7 @@ function _buildResultsHTML(score, tier, found, missing) {
               ? `<ul class="ats-results__kw-list" role="list">
                   ${found.map((k) => `<li><span class="badge badge--kw-found">${_escapeHtml(k)}</span></li>`).join('')}
                 </ul>`
-              : `<p class="ats-results__kw-empty">No keywords from this list were found in the CV.</p>`
+              : `<p class="ats-results__kw-empty">No keywords from the job description were found in the CV.</p>`
           }
         </div>
 
@@ -434,6 +488,61 @@ function _buildResultsHTML(score, tier, found, missing) {
 }
 
 /**
+ * Builds the CV section detection panel HTML.
+ *
+ * @param {{ experience: boolean, education: boolean, skills: boolean, contact: boolean }} detectedSections
+ * @returns {string}
+ */
+function _buildSectionsHTML(detectedSections) {
+  const sectionItems = CV_SECTIONS_META.map(({ key, label, labelEs, icon }) => {
+    const detected = detectedSections?.[key] ?? false;
+    const stateClass = detected
+      ? 'ats-section-chip--found'
+      : 'ats-section-chip--missing';
+    const stateIcon  = detected ? '✓' : '✗';
+    const ariaLabel  = `${label} section ${detected ? 'detected' : 'not detected'} in CV`;
+
+    return `
+      <li
+        class="ats-section-chip ${stateClass}"
+        aria-label="${ariaLabel}"
+      >
+        <span class="ats-section-chip__icon" aria-hidden="true">${icon}</span>
+        <span class="ats-section-chip__label">
+          <span class="ats-section-chip__name">${_escapeHtml(label)}</span>
+          <span class="ats-section-chip__name-es">${_escapeHtml(labelEs)}</span>
+        </span>
+        <span class="ats-section-chip__state" aria-hidden="true">${stateIcon}</span>
+      </li>`;
+  }).join('');
+
+  const detectedCount = CV_SECTIONS_META.filter(
+    ({ key }) => detectedSections?.[key]
+  ).length;
+
+  return `
+    <div class="ats-results__sections" aria-label="CV section detection">
+      <h3 class="ats-results__sections-heading">
+        <span aria-hidden="true">🗂</span> CV Sections Detected
+        <span class="ats-results__sections-count">${detectedCount} / ${CV_SECTIONS_META.length}</span>
+      </h3>
+      <ul class="ats-section-chips" role="list">
+        ${sectionItems}
+      </ul>
+      ${
+        detectedCount < CV_SECTIONS_META.length
+          ? `<p class="ats-results__sections-tip">
+               ▸ Missing sections reduce ATS parse-ability. Add clear headings that match
+               standard section names (Experience, Education, Skills, Contact).
+             </p>`
+          : `<p class="ats-results__sections-ok">
+               ✦ All key sections detected — your CV structure is ATS-friendly.
+             </p>`
+      }
+    </div>`;
+}
+
+/**
  * Builds the SVG donut gauge.
  * The animated arc (#ats-gauge-arc) starts at stroke-dashoffset = circumference
  * (invisible) and is driven to its final position by _animateGauge().
@@ -442,9 +551,9 @@ function _buildResultsHTML(score, tier, found, missing) {
  * @returns {string}
  */
 function _buildGaugeSVG(tier) {
-  const r = GAUGE_RADIUS;
-  const cx = GAUGE_CX;
-  const cy = GAUGE_CY;
+  const r    = GAUGE_RADIUS;
+  const cx   = GAUGE_CX;
+  const cy   = GAUGE_CY;
   const circ = GAUGE_CIRCUMFERENCE;
 
   return `
@@ -505,9 +614,9 @@ function _buildGaugeSVG(tier) {
 function _tierText(tier) {
   return (
     {
-      low: '⚠ Low Match — significant improvements needed',
+      low:    '⚠ Low Match — significant improvements needed',
       medium: '◑ Medium Match — close, but room to grow',
-      high: '✦ Strong Match — excellent ATS fit',
+      high:   '✦ Strong Match — excellent ATS fit',
     }[tier] ?? tier
   );
 }

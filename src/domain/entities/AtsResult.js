@@ -8,12 +8,19 @@
  *  • score must be a number in the range [0, 100].
  *  • foundKeywords and missingKeywords must be non-null arrays of strings.
  *  • A keyword may not appear in both lists simultaneously.
+ *  • detectedSections must be an object with boolean flags for the four
+ *    canonical CV sections: experience, education, skills, contact.
  *
  * Layer: Domain → Entities
  * Imports: domain only (DomainException)
  */
 
 import { DomainException } from '../exceptions/DomainException.js';
+
+/** @typedef {{ experience: boolean, education: boolean, skills: boolean, contact: boolean }} DetectedSections */
+
+/** Canonical section names recognised by the entity. */
+const SECTION_KEYS = ['experience', 'education', 'skills', 'contact'];
 
 export class AtsResult {
   /** @type {number} — integer 0-100 */
@@ -25,16 +32,22 @@ export class AtsResult {
   /** @type {string[]} */
   #missingKeywords;
 
+  /** @type {DetectedSections} */
+  #detectedSections;
+
   /**
-   * @param {object}   props
-   * @param {number}   props.score           — ATS match score in [0, 100]
-   * @param {string[]} props.foundKeywords   — keywords present in the CV
-   * @param {string[]} props.missingKeywords — keywords absent from the CV
+   * @param {object}           props
+   * @param {number}           props.score            — ATS match score in [0, 100]
+   * @param {string[]}         props.foundKeywords    — keywords present in the CV
+   * @param {string[]}         props.missingKeywords  — keywords absent from the CV
+   * @param {DetectedSections} [props.detectedSections] — CV sections detected;
+   *   defaults to all-false when omitted
    */
-  constructor({ score, foundKeywords, missingKeywords }) {
+  constructor({ score, foundKeywords, missingKeywords, detectedSections }) {
     this.#setScore(score);
     this.#setFoundKeywords(foundKeywords);
     this.#setMissingKeywords(missingKeywords);
+    this.#setDetectedSections(detectedSections);
 
     Object.freeze(this);
   }
@@ -71,6 +84,41 @@ export class AtsResult {
     this.#missingKeywords = keywords.map((k) => k.trim().toLowerCase());
   }
 
+  /**
+   * @param {DetectedSections | null | undefined} sections
+   */
+  #setDetectedSections(sections) {
+    // Allow omission — default to all-false
+    if (sections == null) {
+      this.#detectedSections = Object.freeze({
+        experience: false,
+        education: false,
+        skills: false,
+        contact: false,
+      });
+      return;
+    }
+
+    if (typeof sections !== 'object' || Array.isArray(sections)) {
+      throw new DomainException('detectedSections must be a plain object.');
+    }
+
+    for (const key of SECTION_KEYS) {
+      if (typeof sections[key] !== 'boolean') {
+        throw new DomainException(
+          `detectedSections.${key} must be a boolean.`
+        );
+      }
+    }
+
+    this.#detectedSections = Object.freeze({
+      experience: sections.experience,
+      education: sections.education,
+      skills: sections.skills,
+      contact: sections.contact,
+    });
+  }
+
   // ── Public accessors ────────────────────────────────────────────────────────
 
   get score() {
@@ -86,6 +134,14 @@ export class AtsResult {
   }
 
   /**
+   * Snapshot of detected CV sections (frozen copy).
+   * @returns {DetectedSections}
+   */
+  get detectedSections() {
+    return { ...this.#detectedSections };
+  }
+
+  /**
    * Classify the score into a semantic tier used for colour-coding.
    * @returns {'low' | 'medium' | 'high'}
    */
@@ -97,7 +153,7 @@ export class AtsResult {
 
   /**
    * Plain-object snapshot — safe to pass across layer boundaries.
-   * @returns {{ score: number, foundKeywords: string[], missingKeywords: string[], tier: string }}
+   * @returns {{ score: number, foundKeywords: string[], missingKeywords: string[], tier: string, detectedSections: DetectedSections }}
    */
   toSnapshot() {
     return {
@@ -105,6 +161,7 @@ export class AtsResult {
       foundKeywords: this.foundKeywords,
       missingKeywords: this.missingKeywords,
       tier: this.tier,
+      detectedSections: this.detectedSections,
     };
   }
 }
